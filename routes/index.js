@@ -16,9 +16,7 @@ router.get('/:shortUrl', function(req, res, next) {
   }).catch((err) => {
     res.json(err);
   })
-  //First we Validate The Url
-  
-  
+    
 });
 
 module.exports = router;
