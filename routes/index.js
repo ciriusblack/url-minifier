@@ -1,6 +1,6 @@
-var express = require('express');
-var router = express.Router();
-var urlFactories = require('../factories/urls_creation');
+const express = require('express');
+const router = express.Router();
+const urlFactories = require('../factories/urls_creation');
 
 /* GET home page. */
 router.get('/', function(req, res, next) {
@@ -9,8 +9,13 @@ router.get('/', function(req, res, next) {
 
 //Route For Url Redirection
 router.get('/:shortUrl', function(req, res, next) {
+
   var { shortUrl } = req.params;
+
+  //Search for the short url...
   urlFactories.findUrl(shortUrl).then((data) => {
+
+    //We need to update the count there ...
     res.redirect(301, data.originalUrl)
     console.log(data.originalUrl);
   }).catch((err) => {

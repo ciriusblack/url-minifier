@@ -1,34 +1,68 @@
 //We Get Our Requirements
-var express = require('express');
-var router = express.Router();
-var validUrl = require('valid-url');
-var shortid = require('shortid');
-var urlFactories = require('../factories/urls_creation');
+const Joi = require('joi');
+const express = require('express');
+const router = express.Router();
+const shortid = require('shortid');
+const urlFactories = require('../factories/urls_creation');
 
-/* GET Urls */
-router.get('/', function(req, res, next) {
-  res.send('In Url Router ');
-});
 
-//Route For Url transformation
-router.get('/new/:longUrl(*)', function(req, res, next) {
-  var { longUrl } = req.params;
-  
-  //First we Validate The Url
-  if (validUrl.isUri(longUrl)) {
-    var shortUrl = shortid.generate()
-    urlFactories.saveNewUrl(longUrl, shortUrl).then((data) => {
-      res.json(data);
-    }).catch((err) => {
-      res.json(err)
-    })
-   
-  } else {
-    res.json('Please Enter a valid Url');
+//Creation of new urls...
+router.post('/', function(req, res, next) {
+
+  // We verify the body of the request
+  const schema = {
+    longUrl : Joi.string().required().regex(/^(?:http(s)?:\/\/)?[\w.-]+(?:\.[\w\.-]+)+[\w\-\._~:/?#[\]@!\$&'\(\)\*\+,;=.]+$/)
   }
+
+  const result = Joi.validate(req.body, schema);
   
+  if (result.error) {
+    res.status(400).send(result.error.details[0].message);
+    return
+  }
+
 });
+
+//Get Statistics of short Urls...
+router.get('/:shortUrl', function(req, res, next) {
+
+  var { shortUrl } = req.params;
+
+  //Search for the short url...
+  urlFactories.findUrl(shortUrl).then((data) => {
+    res.json(data.count)
+    console.log(data.originalUrl);
+  }).catch((err) => {
+    res.json(err);
+  })
+    
+});
+
 
 
 
 module.exports = router;
+
+
+
+
+
+  // if (!req.body.longUrl) {
+  //   res.status(400).send('Long Url is Required')
+  //   return;
+  // }
+
+  // const { longUrl } = req.body;
+  
+  // //First we Validate The Url
+  // if (validUrl.isUri(longUrl)) {
+  //   const shortUrl = shortid.generate()
+  //   urlFactories.saveNewUrl(longUrl, shortUrl).then((data) => {
+  //     res.json(data);
+  //   }).catch((err) => {
+  //     res.json(err)
+  //   })
+   
+  // } else {
+  //   res.json('Please Enter a valid Url');
+  // }
