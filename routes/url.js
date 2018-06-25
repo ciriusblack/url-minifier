@@ -3,7 +3,8 @@ const Joi = require('joi');
 const express = require('express');
 const router = express.Router();
 const shortid = require('shortid');
-const urlFactories = require('../factories/urls_creation');
+const urlFactories = require('../mongodb/urls_creation');
+const debug = require('debug')('url-minifier:server');
 
 
 //Creation of new urls...
@@ -21,48 +22,37 @@ router.post('/', function(req, res, next) {
     return
   }
 
+  const longUrl = result.value.longUrl
+  const shortUrl = shortid.generate()
+  debug('Long Url: ', longUrl)
+
+  //We save The new Url in the Db
+  urlFactories.saveNewUrl(longUrl, shortUrl)
+  .then(data =>  {
+    debug(data)
+    res.json(data)
+  })
+  .catch((err) => {
+    debug(err.message)
+    res.json(err.message)
+  })
+
 });
 
 //Get Statistics of short Urls...
 router.get('/:shortUrl', function(req, res, next) {
 
-  var { shortUrl } = req.params;
-
+  const { shortUrl } = req.params;
+ 
   //Search for the short url...
   urlFactories.findUrl(shortUrl).then((data) => {
-    res.json(data.count)
-    console.log(data.originalUrl);
+    if (!data) res.send('Url Not Found');
+    debug(data);
+    res.send(`Your Link Has Been Fired ${data.count} times`)
   }).catch((err) => {
     res.json(err);
   })
     
 });
 
-
-
-
 module.exports = router;
-
-
-
-
-
-  // if (!req.body.longUrl) {
-  //   res.status(400).send('Long Url is Required')
-  //   return;
-  // }
-
-  // const { longUrl } = req.body;
-  
-  // //First we Validate The Url
-  // if (validUrl.isUri(longUrl)) {
-  //   const shortUrl = shortid.generate()
-  //   urlFactories.saveNewUrl(longUrl, shortUrl).then((data) => {
-  //     res.json(data);
-  //   }).catch((err) => {
-  //     res.json(err)
-  //   })
-   
-  // } else {
-  //   res.json('Please Enter a valid Url');
-  // }

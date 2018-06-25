@@ -5,13 +5,16 @@ var express = require('express');
 var path = require('path');
 var cookieParser = require('cookie-parser');
 var logger = require('morgan');
-var mongoose =  require('mongoose');
+const mongoose =  require('mongoose');
+var debug = require('debug')('url-minifier:server');
 
-console.log(`NODE_ENV : ${process.env.NODE_ENV}`);
+debug(`NODE_ENV : ${process.env.NODE_ENV}`);
 
 
 //We connect the Db
-//mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost/shortUrls');
+mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost/shortUrls')
+  .then(() => debug('Connected to MongoDb'))
+  .catch((err) => debug('Could Not Connect to Mongodb', err))
 
 //We Set our Route 
 var indexRouter = require('./routes/index');
