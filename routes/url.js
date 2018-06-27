@@ -1,58 +1,44 @@
 //We Get Our Requirements
-const Joi = require('joi');
 const express = require('express');
 const router = express.Router();
 const shortid = require('shortid');
-const urlFactories = require('../mongodb/urls_creation');
+const { Urls , validate} = require('../models/url');
 const debug = require('debug')('url-minifier:server');
 
 
 //Creation of new urls...
-router.post('/', function(req, res, next) {
-
-  // We verify the body of the request
-  const schema = {
-    longUrl : Joi.string().required().regex(/^(?:http(s)?:\/\/)?[\w.-]+(?:\.[\w\.-]+)+[\w\-\._~:/?#[\]@!\$&'\(\)\*\+,;=.]+$/)
-  }
-
-  const result = Joi.validate(req.body, schema);
+router.post('/', async (req, res) => {
+  const { error } = validate(req.body);
+  if (error) return res.status(400).send(error.details[0].message);
   
-  if (result.error) {
-    res.status(400).send(result.error.details[0].message);
-    return
-  }
-
-  const longUrl = result.value.longUrl
+  const { longUrl } = req.body;
   const shortUrl = shortid.generate()
   debug('Long Url: ', longUrl)
 
-  //We save The new Url in the Db
-  urlFactories.saveNewUrl(longUrl, shortUrl)
-  .then(data =>  {
-    debug(data)
-    res.json(data)
+  let url = new Urls ({
+    originalUrl : longUrl,
+    shorterUrl : shortUrl,
   })
-  .catch((err) => {
-    debug(err.message)
-    res.json(err.message)
-  })
+
+  url.save()
+  .then(data => res.status(200).send(data))
+  .catch(err => res.status(400).json(err.message))
 
 });
 
 //Get Statistics of short Urls...
-router.get('/:shortUrl', function(req, res, next) {
+router.get('/:shortUrl', async (req, res, next) => {
 
-  const { shortUrl } = req.params;
- 
-  //Search for the short url...
-  urlFactories.findUrl(shortUrl).then((data) => {
-    if (!data) res.send('Url Not Found');
-    debug(data);
-    res.send(`Your Link Has Been Fired ${data.count} times`)
-  }).catch((err) => {
-    res.json(err);
-  })
-    
+  try {
+    const { shortUrl } = req.params;
+    const url = await Urls.findOne({'shorterUrl': shortUrl });
+    if (!url) return res.status(404).send('Short Url Not Found');
+    res.status(200).json({ clicked : url.count })
+  }
+  catch (ex) {
+    next(ex)
+  }
+
 });
 
 module.exports = router;

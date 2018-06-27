@@ -1,28 +1,16 @@
 
 //We Get Our Requirements
-var createError = require('http-errors');
-var express = require('express');
-var path = require('path');
-var cookieParser = require('cookie-parser');
-var logger = require('morgan');
-const mongoose =  require('mongoose');
-var debug = require('debug')('url-minifier:server');
+const express = require('express');
+const path = require('path');
+const cookieParser = require('cookie-parser');
+const logger = require('morgan');
+const indexRouter = require('./routes/index');
+const urlRouter = require('./routes/url');
+const debug = require('debug')('url-minifier:server');
+const app = express();
+require('./startup/db')()
 
 debug(`NODE_ENV : ${process.env.NODE_ENV}`);
-
-
-//We connect the Db
-mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost/shortUrls')
-  .then(() => debug('Connected to MongoDb'))
-  .catch((err) => debug('Could Not Connect to Mongodb', err))
-
-//We Set our Route 
-var indexRouter = require('./routes/index');
-var urlRouter = require('./routes/url');
-
-var app = express();
-
-
 
 
 // view engine setup
@@ -37,21 +25,13 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/', indexRouter);
 app.use('/api/url', urlRouter);
-
-// catch 404 and forward to error handler
-app.use((req, res, next) => {
-  next(createError(404));
+app.use( (err, req, res, next) => {
+    res.status(500).send('Something Failed...');
 });
 
-// error handler
-app.use((err, req, res, next) => {
-  // set locals, only providing error in development
-  res.locals.message = err.message;
-  res.locals.error = req.app.get('env') === 'development' ? err : {};
+const port = process.env.PORT || '3000';
+const server = app.listen(port, () => debug(`Server Listening on Port ${port}...`))
 
-  // render the error page
-  res.status(err.status || 500);
-  res.render('error');
-});
+module.exports = server;
 
-module.exports = app;
+

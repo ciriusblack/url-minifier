@@ -1,29 +1,41 @@
 const express = require('express');
 const router = express.Router();
-const urlFactories = require('../mongodb/urls_creation');
-const debug = require('debug')('url-minifier:server');
+const { Urls } = require('../models/url');
 
 /* GET home page. */
-router.get('/', function(req, res, next) {
-  res.render('index', { title: 'Url Minifier' });
+router.get('/', async (req, res, next) => {
+  try { 
+    res.render('index', { title: 'Url Minifier' });
+  }
+
+  catch (ex) {
+    next(ex);
+  }
+
 });
 
 //Route For Url Redirection
-router.get('/:shortUrl', function(req, res, next) {
+router.get('/:shortUrl', async (req, res, next) => {
 
-  const { shortUrl } = req.params;
+  try {
 
-  //We Update and Redirect
-  urlFactories.updateCount(shortUrl)
-  .then((data) => {
-    if (!data) res.json('Url Not Found...');
-      debug(data);
-      res.redirect(301, data.originalUrl);
-  })
-  .catch((err) => {
-    res.json(err);
-  }) 
+    const { shortUrl } = req.params;
+
+    //We Update and Redirect
+    const urlUpdated = await Urls.findOneAndUpdate({'shorterUrl': shortUrl}, {
+      $inc : { count : 1 }
+    }, {new : true});
+
+    if (!urlUpdated) return res.status(404).send('Short Url Not Found...');
+    res.redirect(301, urlUpdated.originalUrl);
+
+  }
+
+  catch (ex) {
+    next(ex);
+  }
     
 });
 
 module.exports = router;
+
