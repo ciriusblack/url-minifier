@@ -1,0 +1,3 @@
+{
+    "db": "mongodb://db:27017/shortUrls"
+}

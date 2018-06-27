@@ -27,8 +27,9 @@ router.get('/:shortUrl', async (req, res, next) => {
     }, {new : true});
 
     if (!urlUpdated) return res.status(404).send('Short Url Not Found...');
-    res.redirect(301, urlUpdated.originalUrl);
-
+    const re = new RegExp("^(http|https)://", "i");
+    if(re.test(urlUpdated.originalUrl)) return res.redirect(301, urlUpdated.originalUrl);
+    res.redirect(301, `http://${urlUpdated.originalUrl}`)
   }
 
   catch (ex) {
